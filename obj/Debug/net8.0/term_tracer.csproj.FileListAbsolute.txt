@@ -1,0 +1,15 @@
+/home/liamgatter/dev/C#/term_tracer/bin/Debug/net8.0/term_tracer
+/home/liamgatter/dev/C#/term_tracer/bin/Debug/net8.0/term_tracer.deps.json
+/home/liamgatter/dev/C#/term_tracer/bin/Debug/net8.0/term_tracer.runtimeconfig.json
+/home/liamgatter/dev/C#/term_tracer/bin/Debug/net8.0/term_tracer.dll
+/home/liamgatter/dev/C#/term_tracer/bin/Debug/net8.0/term_tracer.pdb
+/home/liamgatter/dev/C#/term_tracer/obj/Debug/net8.0/term_tracer.GeneratedMSBuildEditorConfig.editorconfig
+/home/liamgatter/dev/C#/term_tracer/obj/Debug/net8.0/term_tracer.AssemblyInfoInputs.cache
+/home/liamgatter/dev/C#/term_tracer/obj/Debug/net8.0/term_tracer.AssemblyInfo.cs
+/home/liamgatter/dev/C#/term_tracer/obj/Debug/net8.0/term_tracer.csproj.CoreCompileInputs.cache
+/home/liamgatter/dev/C#/term_tracer/obj/Debug/net8.0/term_tracer.sourcelink.json
+/home/liamgatter/dev/C#/term_tracer/obj/Debug/net8.0/term_tracer.dll
+/home/liamgatter/dev/C#/term_tracer/obj/Debug/net8.0/refint/term_tracer.dll
+/home/liamgatter/dev/C#/term_tracer/obj/Debug/net8.0/term_tracer.pdb
+/home/liamgatter/dev/C#/term_tracer/obj/Debug/net8.0/term_tracer.genruntimeconfig.cache
+/home/liamgatter/dev/C#/term_tracer/obj/Debug/net8.0/ref/term_tracer.dll
