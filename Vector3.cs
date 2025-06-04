@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace TermTracer
 {
     class Vector3
@@ -105,6 +107,35 @@ namespace TermTracer
                 return this;
             }
             return this / this.length();
+        }
+        public static Vector3 random()
+        {
+            return new(Program.RandomDouble(), Program.RandomDouble(), Program.RandomDouble());
+        }
+        public static Vector3 random(double min, double max)
+        {
+            return new(Program.RandomDouble(min,max), Program.RandomDouble(min,max), Program.RandomDouble(min,max));
+        }
+        public static Vector3 randomUnitVector()
+        {
+            while (true)
+            {
+                var p = random(-1, 1);
+                var lensq = p.length_squared();
+                if (1e-160 < lensq && lensq <= 1)
+                {
+                    return p / Math.Sqrt(lensq);
+                }
+            }
+        }
+        public static Vector3 randomOnHemisphere(Vector3 Normal)
+        {
+            Vector3 onUnitSphere = randomUnitVector();
+            if (dot(onUnitSphere, Normal) > 0)
+            {
+                return onUnitSphere;
+            }
+            return onUnitSphere*-1;
         }
     }
 }

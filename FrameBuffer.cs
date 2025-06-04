@@ -28,7 +28,7 @@ namespace TermTracer
             float total = (float)r + (float)g + (float)b;
             total /= 3.0f;
             total /= 255;
-            string mappings = "_.,:;!rvL7Tictzlnxu14oYjsIVFJfeyCZa2APqhk3SXENUbwdp5HOGK96mD$R8BQ0MW@";
+            string mappings = "HOGK96D$R8BQ0MW@";
             total *= mappings.Length;
             if (total > mappings.Length)
             {
@@ -42,7 +42,8 @@ namespace TermTracer
         }
         public void DrawToTerminal()
         {
-            string buffer = "";
+            char[] buffer = new char["\x1b[38;2;255;255;255m".Length*Width*Height*2 + (Width*Height*2)+Height ];
+            int idx = 0;
             for (int y = 0; y < Height; ++y)
             {
                 for (int x = 0; x < Width; ++x)
@@ -52,13 +53,21 @@ namespace TermTracer
                     int g = (int)color.y;
                     int b = (int)color.z;
                     char c = MapRgbToChar(r, g, b);
-                    buffer += $"\x1b[38;2;{r};{g};{b}m";
-                    buffer += c;
-                    buffer += $"\x1b[38;2;{r};{g};{b}m";
-                    buffer += c;
+                    string temp = "";
+                    temp += $"\x1b[38;2;{r};{g};{b}m";
+                    temp += c;
+                    temp += $"\x1b[38;2;{r};{g};{b}m";
+                    temp += c;
+                    foreach (var chr in temp)
+                    {
+                        buffer[idx] = chr;
+                        ++idx;
+                    }
                 }
-                buffer += '\n';
+                buffer[idx] = '\n';
+                ++idx;
             }
+            buffer[idx] = '\0';
             Console.WriteLine(buffer);
         }
     }

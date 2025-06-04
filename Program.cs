@@ -8,10 +8,16 @@ namespace TermTracer
         public Vector3 p;
         public Vector3 Normal;
         public double t;
+        bool frontFace;
         public HitRecord()
         {
             p = new();
             Normal = new();
+        }
+        public void SetFrontFace(Ray r, Vector3 outwardNormal)
+        {
+            frontFace = Vector3.dot(r.Direction, outwardNormal) < 0;
+            Normal = frontFace ? outwardNormal : outwardNormal*-1;
         }
     }
     abstract class Object
@@ -55,52 +61,119 @@ namespace TermTracer
             rec.t = root;
             rec.p = r.at(rec.t);
             rec.Normal = (rec.p - Center) / Radius;
+            Vector3 outwardNormal = (rec.p - Center) / Radius;
+            rec.SetFrontFace(r, outwardNormal);
             return true;
 
         }
 
     }
+    class World : Object
+    {
+        public List<Object> Objects = new();
+        public void Add(Object obj)
+        {
+            Objects.Add(obj);
+        }
+        public override bool hit(Ray r, double ray_tmin, double ray_tmax, out HitRecord rec)
+        {
+            rec = new();
+            HitRecord temp = new();
+            bool hitAnything = false;
+            double closestSoFar = ray_tmax;
+            foreach (var Obj in Objects)
+            {
+                if (Obj.hit(r, ray_tmin, closestSoFar, out temp))
+                {
+                    hitAnything = true;
+                    closestSoFar = temp.t;
+                    rec = temp;
+                }
+            }
+            return hitAnything;
+        }
+    }
     class Program
     {
-        public static Vector3 RayColor(Ray r)
+        private static Random r = new();
+        public static double RandomDouble()
         {
-            var t = HitSphere(new(0, 0, -1), 0.5, r);
-            if(t > 0.0)
+            return r.NextDouble();
+        }
+        public static double RandomDouble(double min, double max)
+        {
+            return min + (max - min) * RandomDouble();
+        }
+
+        public static Vector3 RayColor(Ray r, World world, int depth)
+        {
+            if (depth <= 0)
             {
-                var N = (r.at(t) - new Vector3(0, 0, -1)).UnitVector();
-                return new Vector3(N.x + 1, N.y + 1, N.z + 1) * 0.5;
+                return new(0, 0, 0);
+            }
+            HitRecord rec = new();
+            if (world.hit(r, 0.0001, double.PositiveInfinity, out rec))
+            {
+                Vector3 direction = rec.Normal + Vector3.randomUnitVector();
+                return RayColor(new(rec.p, direction), world, depth-1)*0.5;
             }
             Vector3 unitDirection = r.Direction.UnitVector();
             var a = 0.5 * (unitDirection.y + 1.0);
             return new Vector3(1, 1, 1) * (1 - a) + new Vector3(0.5, 0.7, 1.0) * a;
         }
+        public const int SPP = 40;
+        public const int MaxDepth = 20;
+        public static Ray GetRay(double x, double y)
+        {
+            var offset = SampleSquare();
+            var pixelSample = pixel00Loc + (pixelDeltaU * (x + offset.x)) + (pixelDeltaV*(y + offset.y));
+            var origin = CameraCenter;
+            var direction = pixelSample - CameraCenter;
+
+            return new(origin, direction);
+        }
+        public static Vector3 SampleSquare()
+        {
+            return new(RandomDouble() - 0.5, RandomDouble() - 0.5, RandomDouble() - 0.5);
+        }
+        public static Vector3 pixel00Loc = new();
+        public static Vector3 pixelDeltaU = new();
+        public static Vector3 pixelDeltaV = new();
+        public static Vector3 CameraCenter = new();
         public static void Main()
         {
             FrameBuffer fb = new();
             double aspectRatio = (float)fb.Width / (float)fb.Height;
             double viewportHeight = 2.0;
             double viewportWidth = viewportHeight * aspectRatio;
-            Vector3 CameraCenter = new(0,0,0);
+            CameraCenter = new(0, 0, 0);
             Vector3 viewportU = new Vector3(viewportWidth, 0, 0);
             Vector3 viewportV = new Vector3(0, -viewportHeight, 0);
 
             double focalLength = 1;
-            Vector3 pixelDeltaU = viewportU / (double)fb.Width;
-            Vector3 pixelDeltaV = viewportV / (double)fb.Height;
+            pixelDeltaU = viewportU / (double)fb.Width;
+            pixelDeltaV = viewportV / (double)fb.Height;
 
-            Vector3 viewPortUpperLeft = CameraCenter - (new Vector3(0, 0, focalLength) + viewportU/2 + viewportV/2);
-            Vector3 pixel00Loc = viewPortUpperLeft + (pixelDeltaU + pixelDeltaV)*0.5;
+            Vector3 viewPortUpperLeft = CameraCenter - (new Vector3(0, 0, focalLength) + viewportU / 2 + viewportV / 2);
+            pixel00Loc = viewPortUpperLeft + (pixelDeltaU + pixelDeltaV) * 0.5;
+            World world = new();
+            world.Add(new Sphere(new(0, 0, -1), 0.5));
+            world.Add(new Sphere(new(0, -100.5, -1), 100));
+
 
 
             for (int x = 0; x < fb.Width; ++x)
             {
                 for (int y = 0; y < fb.Height; ++y)
                 {
-                    var pixelCenter = pixel00Loc + (pixelDeltaU * (double)x) + (pixelDeltaV * (double)y);
-                    var rayDir = pixelCenter - CameraCenter;
-                    Ray r = new(CameraCenter, rayDir);
-                    var Color = RayColor(r);
-                    Color *= 255;
+                    var Color = new Vector3();
+                    for (int i = 0; i < SPP; ++i)
+                    {
+                        Ray r = GetRay(x,y);
+                        Color += RayColor(r, world, MaxDepth);
+                    }
+                    Color /= (double)SPP;
+                    Color *= 255.0;
                     fb.PutPixel(x, y, Color);
                 }
             }
