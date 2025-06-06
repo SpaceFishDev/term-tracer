@@ -9,6 +9,7 @@ namespace TermTracer
         public Vector3 Normal;
         public double t;
         bool frontFace;
+        public Material mat;
         public HitRecord()
         {
             p = new();
@@ -20,6 +21,44 @@ namespace TermTracer
             Normal = frontFace ? outwardNormal : outwardNormal*-1;
         }
     }
+    abstract class Material
+    {
+        public abstract bool scatter(Ray rIn, HitRecord rec, out Vector3 attenuation, out Ray scattered);
+    }
+    class Lambertian : Material
+    {
+        public Vector3 Albedo = new();
+        public Lambertian(Vector3 albedo)
+        {
+            Albedo = albedo;
+        }
+        public override bool scatter(Ray rIn, HitRecord rec, out Vector3 attenuation, out Ray scattered)
+        {
+            Vector3 scatterDir = rec.Normal + Vector3.randomUnitVector();
+            if (scatterDir.NearZero())
+            {
+                scatterDir = rec.Normal;
+            }
+            scattered = new Ray(rec.p, scatterDir);
+            attenuation = Albedo;
+            return true;
+        }
+    }
+    class Metal : Material
+    {
+        public Vector3 Albedo;
+        public Metal(Vector3 albedo)
+        {
+            Albedo = albedo;
+        }
+        public override bool scatter(Ray rIn, HitRecord rec, out Vector3 attenuation, out Ray scattered)
+        {
+            Vector3 reflected = Vector3.Reflect(rIn.Direction, rec.Normal);
+            scattered = new Ray(rec.p, reflected);
+            attenuation = Albedo;
+            return true;
+        }
+    }
     abstract class Object
     {
         public abstract bool hit(Ray r, double ray_tmin, double ray_tmax, out HitRecord rec);
@@ -28,10 +67,12 @@ namespace TermTracer
     {
         public Vector3 Center;
         public double Radius;
-        public Sphere(Vector3 c, double r)
+        public Material mat;
+        public Sphere(Vector3 c, double r, Material mat)
         {
             Center = c;
             Radius = r;
+            this.mat = mat;
         }
         public override bool hit(Ray r, double ray_tmin, double ray_tmax, out HitRecord rec)
         {
@@ -60,6 +101,7 @@ namespace TermTracer
             rec = new();
             rec.t = root;
             rec.p = r.at(rec.t);
+            rec.mat = this.mat;
             rec.Normal = (rec.p - Center) / Radius;
             Vector3 outwardNormal = (rec.p - Center) / Radius;
             rec.SetFrontFace(r, outwardNormal);
@@ -114,8 +156,13 @@ namespace TermTracer
             HitRecord rec = new();
             if (world.hit(r, 0.0001, double.PositiveInfinity, out rec))
             {
-                Vector3 direction = rec.Normal + Vector3.randomUnitVector();
-                return RayColor(new(rec.p, direction), world, depth-1)*0.5;
+                Ray scattered;
+                Vector3 attenuation;
+                if (rec.mat.scatter(r, rec, out attenuation, out scattered))
+                {
+                    return attenuation * RayColor(scattered, world, depth-1);
+                }
+                return new Vector3(0,0,0);
             }
             Vector3 unitDirection = r.Direction.UnitVector();
             var a = 0.5 * (unitDirection.y + 1.0);
@@ -157,8 +204,8 @@ namespace TermTracer
             Vector3 viewPortUpperLeft = CameraCenter - (new Vector3(0, 0, focalLength) + viewportU / 2 + viewportV / 2);
             pixel00Loc = viewPortUpperLeft + (pixelDeltaU + pixelDeltaV) * 0.5;
             World world = new();
-            world.Add(new Sphere(new(0, 0, -1), 0.5));
-            world.Add(new Sphere(new(0, -100.5, -1), 100));
+            world.Add(new Sphere(new(0, 0, -1), 0.5, new Lambertian(new(0.8,0.2,0.4))));
+            world.Add(new Sphere(new(0, -100.5, -1), 100, new Lambertian(new(0.2,0.6,0.6))));
 
 
 

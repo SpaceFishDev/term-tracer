@@ -137,5 +137,14 @@ namespace TermTracer
             }
             return onUnitSphere*-1;
         }
+        public bool NearZero()
+        {
+            var s = 1e-8;
+            return (Math.Abs(e[0]) < s)&&(Math.Abs(e[1]) < s)&&(Math.Abs(e[2]) < s);
+        }
+        public static Vector3 Reflect(Vector3 u, Vector3 v)
+        {
+            return u - v * 2 * dot(u, v);
+        }
     }
 }
